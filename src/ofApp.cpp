@@ -3,7 +3,9 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
     sampleRate = 48000;
-    bufSize = 256;
+    bufferSize = 256;
+    inputs = 0;
+    outputs = 2;
     amp = 0.5;
     pan = 0.5;
     phase = 0;
@@ -13,6 +15,7 @@ void ofApp::setup(){
     ofBackground(ofColor::black);
     
     ofSoundStreamSettings settings;
+    settings.setInListener(this);
     settings.setOutListener(this);
     settings.sampleRate = sampleRate;
     settings.numInputChannels = 0;
@@ -29,20 +32,20 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     float audioHeight = ofGetHeight() / 2.0f;
-    float phaseDiff = ofGetWidth() / float(bufSize);
+    float phaseDiff = ofGetWidth() / float(bufferSize);
     
     ofSetColor(255, 255, 255);
     ofNoFill();
     ofSetLineWidth(1);
     
     ofBeginShape();
-    for (int i=0; i<bufSize; i++) {
+    for (int i=0; i<bufferSize; i++) {
         ofVertex(i * phaseDiff, audioHeight/2 + lAudio[i] * audioHeight);
     }
     ofEndShape();
     
     ofBeginShape();
-    for (int i=0; i<bufSize; i++) {
+    for (int i=0; i<bufferSize; i++) {
         ofVertex(i * phaseDiff, audioHeight/2 * 3 + rAudio[i] * audioHeight);
     }
     ofEndShape();
@@ -138,6 +141,7 @@ void ofApp::gotMessage(ofMessage msg){
 }
 
 //--------------------------------------------------------------
+/*
 void ofApp::audioRequested(float* output, int bufferSize, int nChannels){
     float sample;
     float phaseDiff;
@@ -171,5 +175,45 @@ void ofApp::audioRequested(float* output, int bufferSize, int nChannels){
         
         lAudio[i] = output[i * nChannels] = sample * (1.0 - pan) * amp;
         rAudio[i] = output[i * nChannels + 1] = sample * pan * amp;
+    }
+}
+*/
+
+//--------------------------------------------------------------
+void ofApp::audioOut(ofSoundBuffer &output){
+    const int frames = output.getNumFrames();
+    const int channels = output.getNumChannels();
+    float sample;
+    float phaseDiff;
+    
+    phaseDiff = TWO_PI * frequency / sampleRate;
+    
+    for (int i=0; i<frames; i++) {
+        phase += phaseDiff;
+        while (phase > TWO_PI) {
+            phase -= TWO_PI;
+        }
+        
+        //sample = sin(phase);
+        
+        switch (waveSharpe) {
+            case 1:
+                sample = sin(phase);
+                break;
+            case 2:
+                sample = - phase / PI + 1;
+                break;
+            case 3:
+                sample = (phase < PI) ? -1: 1;
+                break;
+            case 4:
+                sample = (phase < PI) ? -2 / PI * phase + 1: 2 / PI * phase - 3;
+                break;
+            case 5:
+                sample = ofRandom(-1, 1);
+        }
+        
+        lAudio[i] = output[i * channels] = sample * (1.0 - pan) * amp;
+        rAudio[i] = output[i * channels + 1] = sample * pan * amp;
     }
 }

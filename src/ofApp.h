@@ -20,11 +20,16 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
-        void audioRequested(float* output, int bufferSize, int nChannels);
+        /*
+        void audioRequested(float * output, int bufferSize, int nChannels);
+        */
+        void audioOut(ofSoundBuffer &output);
     
         ofSoundStream soundStream;
         int sampleRate;
-        int bufSize;
+        int bufferSize;
+        int inputs;
+        int outputs;
         float pan;
         float amp;
         float phase;
